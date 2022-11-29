@@ -1,14 +1,13 @@
-import {
-  KeySchema,
-  KeyType,
-} from "./node_modules/aws-sdk/clients/dynamodbstreams.d";
-import { AttributeDefinitions } from "./node_modules/aws-sdk/clients/dynamodb.d";
 import type { AWS } from "@serverless/typescript";
 
 const serverlessConfiguration: AWS = {
   service: "certificateignite",
   frameworkVersion: "3",
-  plugins: ["serverless-esbuild", "serverless-offline"],
+  plugins: [
+    "serverless-esbuild",
+    "serverless-dynamodb-local",
+    "serverless-offline",
+  ],
   provider: {
     name: "aws",
     runtime: "nodejs14.x",
@@ -23,13 +22,13 @@ const serverlessConfiguration: AWS = {
   },
   // import the function via paths
   functions: {
-    hello: {
-      handler: "src/functions/hello.handler",
+    generateCertificate: {
+      handler: "src/functions/generateCertificate.handler",
       events: [
         {
           http: {
-            path: "hello",
-            method: "get",
+            path: "generateCertificate",
+            method: "post",
 
             cors: true,
           },
@@ -49,13 +48,21 @@ const serverlessConfiguration: AWS = {
       platform: "node",
       concurrency: 10,
     },
+    dynamodb: {
+      stages: ["dev", "local"],
+      start: {
+        port: 8000,
+        inMemory: true,
+        migrate: true,
+      },
+    },
   },
   resources: {
     Resources: {
       dbCertificateUsers: {
         Type: "AWS::DynamoDB::Table",
         Properties: {
-          Tablename: "users_certificate",
+          TableName: "users_certificate",
           ProvisionedThroughput: {
             ReadCapacityUnits: 5,
             WriteCapacityUnits: 5,
